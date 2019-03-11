@@ -48,6 +48,8 @@ func converterFactory(t string) (converter, error) {
 	case "String", "UUID":
 		return func(src string) (interface{}, error) { return src, nil }, nil
 	case "Date", "DateTime",
+		"Float32", "Float64",
+		"Int8", "Int16", "Int32", "Int64",
 		"UInt8", "UInt16", "UInt32", "UInt64":
 		return converters[t], nil
 	default:
@@ -68,7 +70,9 @@ var converters = map[string]converter{
 	"UInt8":    UInt(8, func(v uint64) interface{} { return uint8(v) }),
 	"UInt16":   UInt(16, func(v uint64) interface{} { return uint16(v) }),
 	"UInt32":   UInt(32, func(v uint64) interface{} { return uint32(v) }),
-	"UInt64":   UInt(64, func(v uint64) interface{} { return uint64(v) }),
+	"UInt64":   UInt(64, func(v uint64) interface{} { return v }),
+	"Float32":  Float(32, func(v float64) interface{} { return float32(v) }),
+	"Float64":  Float(64, func(v float64) interface{} { return v }),
 }
 
 func Date(str string) (interface{}, error) {
@@ -102,6 +106,17 @@ func UInt(bitSize int, cast func(uint64) interface{}) converter {
 func Int(bitSize int, cast func(int64) interface{}) converter {
 	return func(src string) (interface{}, error) {
 		value, err := strconv.ParseInt(src, 10, bitSize)
+		if err != nil {
+			return 0, err
+		}
+		return cast(value), nil
+	}
+}
+
+// Float <T>
+func Float(bitSize int, cast func(float64) interface{}) converter {
+	return func(src string) (interface{}, error) {
+		value, err := strconv.ParseFloat(src, bitSize)
 		if err != nil {
 			return 0, err
 		}
