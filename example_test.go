@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ClickHouse-Ninja/ok"
+	_ "github.com/kshvakov/clickhouse"
 	"github.com/stretchr/testify/assert"
 )
 
