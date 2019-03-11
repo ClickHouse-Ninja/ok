@@ -1,0 +1,19 @@
+# github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58
+github.com/cloudflare/golz4
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
+# github.com/kshvakov/clickhouse v1.3.6
+github.com/kshvakov/clickhouse
+github.com/kshvakov/clickhouse/lib/binary
+github.com/kshvakov/clickhouse/lib/column
+github.com/kshvakov/clickhouse/lib/data
+github.com/kshvakov/clickhouse/lib/leakypool
+github.com/kshvakov/clickhouse/lib/protocol
+github.com/kshvakov/clickhouse/lib/types
+github.com/kshvakov/clickhouse/lib/cityhash102
+github.com/kshvakov/clickhouse/lib/lz4
+github.com/kshvakov/clickhouse/lib/writebuffer
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/stretchr/testify v1.3.0
+github.com/stretchr/testify/assert
