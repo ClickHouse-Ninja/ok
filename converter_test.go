@@ -9,6 +9,77 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestConverterFactory(t *testing.T) {
+	assets := []struct {
+		chType   string
+		src      string
+		expected interface{}
+	}{
+		{
+			chType:   "Array(String)",
+			src:      `['A','B','C']`,
+			expected: []string{"A", "B", "C"},
+		},
+		{
+			chType:   "Array(Int8)",
+			src:      `[1,2,3]`,
+			expected: []int8{1, 2, 3},
+		},
+		{
+			chType:   "Array(Int16)",
+			src:      `[1,2,3]`,
+			expected: []int16{1, 2, 3},
+		},
+		{
+			chType:   "Array(Int32)",
+			src:      `[1,2,3]`,
+			expected: []int32{1, 2, 3},
+		},
+		{
+			chType:   "Array(Int64)",
+			src:      `[1,2,3]`,
+			expected: []int64{1, 2, 3},
+		},
+		{
+			chType:   "Array(UInt8)",
+			src:      `[1,2,3]`,
+			expected: []uint8{1, 2, 3},
+		},
+		{
+			chType:   "Array(UInt16)",
+			src:      `[1,2,3]`,
+			expected: []uint16{1, 2, 3},
+		},
+		{
+			chType:   "Array(UInt32)",
+			src:      `[1,2,3]`,
+			expected: []uint32{1, 2, 3},
+		},
+		{
+			chType:   "Array(UInt64)",
+			src:      `[1,2,3]`,
+			expected: []uint64{1, 2, 3},
+		},
+		{
+			chType:   "Array(Float32)",
+			src:      `[1,2,3]`,
+			expected: []float32{1, 2, 3},
+		},
+		{
+			chType:   "Array(Float64)",
+			src:      `[1,2,3]`,
+			expected: []float64{1, 2, 3},
+		},
+	}
+	for _, asset := range assets {
+		if converter, err := converterFactory(asset.chType); assert.NoError(t, err) {
+			if value, err := converter(asset.src); assert.NoError(t, err) {
+				assert.Equal(t, asset.expected, value)
+			}
+		}
+	}
+}
+
 func TestTSVtoArgs(t *testing.T) {
 	var (
 		body = bytes.NewBuffer([]byte{})

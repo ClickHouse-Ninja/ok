@@ -1,4 +1,4 @@
-# ClickHouse testing suite [![Build Status](https://travis-ci.org/ClickHouse-Ninja/ok.svg?branch=master)](https://travis-ci.org/ClickHouse-Ninja/ok)
+# ClickHouse testing suite [![Build Status](https://travis-ci.org/ClickHouse-Ninja/ok.svg?branch=master)](https://travis-ci.org/ClickHouse-Ninja/ok) [![codecov](https://codecov.io/gh/ClickHouse-Ninja/ok/branch/master/graph/badge.svg)](https://codecov.io/gh/ClickHouse-Ninja/ok)
 
 This is a small framework to help test Go and ClickHouse applications.
 

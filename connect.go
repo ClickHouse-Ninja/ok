@@ -16,9 +16,9 @@ type ClickHouse interface {
 	ShowDatabases() ([]string, error)
 	ShowTables(from ...string) ([]string, error)
 	DatabaseExists(database string) bool
-	TableExists(database, table string) (bool, error)
-	DictionaryExists(dictionary string) (bool, error)
-	ReloadDictionary(dictionary string) error
+	TableExists(database, table string) bool
+	DictionaryExists(dictionary string) bool
+	ReloadDictionary(dictionary string) bool
 	CopyFromReader(r io.Reader, sql string) bool
 	DropDatabase(database string) bool
 	DropTable(database, table string) bool
@@ -136,12 +136,22 @@ func (c *clickhouse) DatabaseExists(database string) bool {
 	return exists
 }
 
-func (c *clickhouse) TableExists(database, table string) (bool, error) {
-	return c.exists("SELECT COUNT() FROM system.tables WHERE database = ? AND name = ?", database, table)
+func (c *clickhouse) TableExists(database, table string) bool {
+	exists, err := c.exists("SELECT COUNT() FROM system.tables WHERE database = ? AND name = ?", database, table)
+	if err != nil {
+		c.test.Errorf("an error occurred while checking the table: %v", err)
+		return false
+	}
+	return exists
 }
 
-func (c *clickhouse) DictionaryExists(dictionary string) (bool, error) {
-	return c.exists("SELECT COUNT() FROM system.dictionaries WHERE name = ?", dictionary)
+func (c *clickhouse) DictionaryExists(dictionary string) bool {
+	exists, err := c.exists("SELECT COUNT() FROM system.dictionaries WHERE name = ?", dictionary)
+	if err != nil {
+		c.test.Errorf("an error occurred while checking the dictionary: %v", err)
+		return false
+	}
+	return exists
 }
 
 func (c *clickhouse) exists(query string, args ...interface{}) (bool, error) {
@@ -152,11 +162,12 @@ func (c *clickhouse) exists(query string, args ...interface{}) (bool, error) {
 	return count == 1, nil
 }
 
-func (c *clickhouse) ReloadDictionary(dictionary string) error {
+func (c *clickhouse) ReloadDictionary(dictionary string) bool {
 	if _, err := c.conn.Exec("SYSTEM RELOAD DICTIONARY " + quote(dictionary)); err != nil {
-		return err
+		c.test.Errorf("an error occurred while reloading dictionary: %v", err)
+		return false
 	}
-	return nil
+	return true
 }
 
 func (c *clickhouse) DropDatabase(database string) bool {

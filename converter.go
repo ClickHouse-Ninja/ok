@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -54,7 +55,11 @@ func converterFactory(t string) (converter, error) {
 		return converters[t], nil
 	default:
 		if strings.HasPrefix(t, "Array") {
-
+			base, err := converterFactory(t[6 : len(t)-1])
+			if err != nil {
+				return nil, err
+			}
+			return Array(base), nil
 		}
 	}
 	return nil, fmt.Errorf("converter '%s' not found", t)
@@ -121,5 +126,55 @@ func Float(bitSize int, cast func(float64) interface{}) converter {
 			return 0, err
 		}
 		return cast(value), nil
+	}
+}
+
+// Array <T>
+func Array(convert converter) converter {
+	return func(src string) (v interface{}, err error) {
+		var slice reflect.Value
+		values := strings.Split(src[1:len(src)-1], ",")
+		for _, value := range values {
+			if value[0] == '\'' && value[len(value)-1] == '\'' {
+				value = value[1 : len(value)-1]
+			}
+			switch v, err = convert(value); {
+			case err != nil:
+				return nil, err
+			case !slice.IsValid():
+				var sliceType interface{}
+				switch v.(type) {
+				case int8:
+					sliceType = []int8{}
+				case int16:
+					sliceType = []int16{}
+				case int32:
+					sliceType = []int32{}
+				case int64:
+					sliceType = []int64{}
+				case uint8:
+					sliceType = []uint8{}
+				case uint16:
+					sliceType = []uint16{}
+				case uint32:
+					sliceType = []uint32{}
+				case uint64:
+					sliceType = []uint64{}
+				case float32:
+					sliceType = []float32{}
+				case float64:
+					sliceType = []float64{}
+				case string:
+					sliceType = []string{}
+				case time.Time:
+					sliceType = []time.Time{}
+				default:
+					return nil, fmt.Errorf("unsupported Array type '%T'", v)
+				}
+				slice = reflect.MakeSlice(reflect.TypeOf(sliceType), 0, len(values))
+			}
+			slice = reflect.Append(slice, reflect.ValueOf(v))
+		}
+		return slice.Interface(), nil
 	}
 }
