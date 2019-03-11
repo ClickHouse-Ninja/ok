@@ -3,7 +3,7 @@
 This is a small framework to help test Go and ClickHouse applications.
 
 ```go
-package tester_test
+package ok_test
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"encoding/csv"
 	"testing"
 
-	"github.com/ClickHouse-Ninja/tester"
+	"github.com/ClickHouse-Ninja/ok"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +27,7 @@ func (app *App) Count() (count int, err error) {
 }
 
 func TestExapmple(t *testing.T) {
-	conn := tester.Connect(t, "tcp://127.0.0.1:9000?debug=0")
+	conn := ok.Connect(t, "tcp://127.0.0.1:9000?debug=0")
 	if conn.DatabaseExists("tester") {
 		t.Fatal("database 'tester' is already exists")
 	}
