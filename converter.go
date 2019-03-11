@@ -132,8 +132,10 @@ func Float(bitSize int, cast func(float64) interface{}) converter {
 // Array <T>
 func Array(convert converter) converter {
 	return func(src string) (v interface{}, err error) {
-		var slice reflect.Value
-		values := strings.Split(src[1:len(src)-1], ",")
+		var (
+			slice  reflect.Value
+			values = strings.Split(src[1:len(src)-1], ",")
+		)
 		for _, value := range values {
 			if value[0] == '\'' && value[len(value)-1] == '\'' {
 				value = value[1 : len(value)-1]
