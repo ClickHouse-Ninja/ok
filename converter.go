@@ -59,28 +59,28 @@ func converterFactory(t string) (converter, error) {
 			if err != nil {
 				return nil, err
 			}
-			return Array(base), nil
+			return arrayT(base), nil
 		}
 	}
 	return nil, fmt.Errorf("converter '%s' not found", t)
 }
 
 var converters = map[string]converter{
-	"Date":     Date,
-	"DateTime": DateTime,
-	"Int8":     Int(8, func(v int64) interface{} { return int8(v) }),
-	"Int16":    Int(16, func(v int64) interface{} { return int16(v) }),
-	"Int32":    Int(32, func(v int64) interface{} { return int32(v) }),
-	"Int64":    Int(64, func(v int64) interface{} { return int64(v) }),
-	"UInt8":    UInt(8, func(v uint64) interface{} { return uint8(v) }),
-	"UInt16":   UInt(16, func(v uint64) interface{} { return uint16(v) }),
-	"UInt32":   UInt(32, func(v uint64) interface{} { return uint32(v) }),
-	"UInt64":   UInt(64, func(v uint64) interface{} { return v }),
-	"Float32":  Float(32, func(v float64) interface{} { return float32(v) }),
-	"Float64":  Float(64, func(v float64) interface{} { return v }),
+	"Date":     date,
+	"DateTime": dateTime,
+	"Int8":     intT(8, func(v int64) interface{} { return int8(v) }),
+	"Int16":    intT(16, func(v int64) interface{} { return int16(v) }),
+	"Int32":    intT(32, func(v int64) interface{} { return int32(v) }),
+	"Int64":    intT(64, func(v int64) interface{} { return int64(v) }),
+	"UInt8":    uintT(8, func(v uint64) interface{} { return uint8(v) }),
+	"UInt16":   uintT(16, func(v uint64) interface{} { return uint16(v) }),
+	"UInt32":   uintT(32, func(v uint64) interface{} { return uint32(v) }),
+	"UInt64":   uintT(64, func(v uint64) interface{} { return v }),
+	"Float32":  floatT(32, func(v float64) interface{} { return float32(v) }),
+	"Float64":  floatT(64, func(v float64) interface{} { return v }),
 }
 
-func Date(str string) (interface{}, error) {
+func date(str string) (interface{}, error) {
 	value, err := time.Parse("2006-01-02", str)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func Date(str string) (interface{}, error) {
 	return value, nil
 }
 
-func DateTime(str string) (interface{}, error) {
+func dateTime(str string) (interface{}, error) {
 	value, err := time.Parse("2006-01-02 15:04:05", str)
 	if err != nil {
 		return nil, err
@@ -96,19 +96,8 @@ func DateTime(str string) (interface{}, error) {
 	return value.Add(time.Nanosecond), nil
 }
 
-// UInt <T>
-func UInt(bitSize int, cast func(uint64) interface{}) converter {
-	return func(src string) (interface{}, error) {
-		value, err := strconv.ParseUint(src, 10, bitSize)
-		if err != nil {
-			return 0, err
-		}
-		return cast(value), nil
-	}
-}
-
 // Int <T>
-func Int(bitSize int, cast func(int64) interface{}) converter {
+func intT(bitSize int, cast func(int64) interface{}) converter {
 	return func(src string) (interface{}, error) {
 		value, err := strconv.ParseInt(src, 10, bitSize)
 		if err != nil {
@@ -118,8 +107,19 @@ func Int(bitSize int, cast func(int64) interface{}) converter {
 	}
 }
 
+// UInt <T>
+func uintT(bitSize int, cast func(uint64) interface{}) converter {
+	return func(src string) (interface{}, error) {
+		value, err := strconv.ParseUint(src, 10, bitSize)
+		if err != nil {
+			return 0, err
+		}
+		return cast(value), nil
+	}
+}
+
 // Float <T>
-func Float(bitSize int, cast func(float64) interface{}) converter {
+func floatT(bitSize int, cast func(float64) interface{}) converter {
 	return func(src string) (interface{}, error) {
 		value, err := strconv.ParseFloat(src, bitSize)
 		if err != nil {
@@ -130,7 +130,7 @@ func Float(bitSize int, cast func(float64) interface{}) converter {
 }
 
 // Array <T>
-func Array(convert converter) converter {
+func arrayT(convert converter) converter {
 	return func(src string) (v interface{}, err error) {
 		var (
 			slice  reflect.Value
