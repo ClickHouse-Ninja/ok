@@ -27,7 +27,7 @@ func TestExapmple(t *testing.T) {
 	if ok.DatabaseExists("tester") {
 		t.Fatal("database 'tester' is already exists")
 	}
-	defer ok.DropDatabase("tester")
+	defer ok.Clear()
 	const ddl = `
 	CREATE DATABASE tester;
 	CREATE TABLE tester.table (
@@ -40,7 +40,6 @@ func TestExapmple(t *testing.T) {
 	if err := ok.Exec(ddl); err != nil {
 		t.Fatalf("an error occurred while creating the test table: %v", err)
 	}
-	defer ok.DropTable("tester", "table")
 	var (
 		buf    bytes.Buffer
 		writer = csv.NewWriter(&buf)

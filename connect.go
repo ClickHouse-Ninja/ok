@@ -22,6 +22,7 @@ type ClickHouse interface {
 	CopyFromReader(r io.Reader, sql string) bool
 	DropDatabase(database string) bool
 	DropTable(database, table string) bool
+	Clear() bool
 }
 
 type Version struct {
@@ -70,6 +71,10 @@ type clickhouse struct {
 	test     *testing.T
 	conn     *sql.DB
 	database string
+	clear    struct {
+		databases []string
+		tables    [][]string
+	}
 }
 
 func (c *clickhouse) DB() *sql.DB {
@@ -192,6 +197,12 @@ func (c *clickhouse) Exec(query string) error {
 			if _, err := c.conn.Exec(query); err != nil {
 				return err
 			}
+			if database := extractCreateDatabase(query); len(database) != 0 {
+				c.clear.databases = append(c.clear.databases, database)
+			}
+			if database, table := extractCreateTable(query); len(table) != 0 {
+				c.clear.tables = append(c.clear.tables, []string{database, table})
+			}
 		}
 	}
 	return nil
@@ -240,6 +251,25 @@ func (c *clickhouse) CopyFromReader(r io.Reader, query string) bool {
 		return false
 	}
 	return true
+}
+
+func (c *clickhouse) Clear() bool {
+	ok := true
+	for _, tuple := range c.clear.tables {
+		database := c.database
+		if len(tuple[0]) != 0 {
+			database = tuple[0]
+		}
+		if !c.DropTable(database, tuple[1]) {
+			ok = false
+		}
+	}
+	for _, database := range c.clear.databases {
+		if !c.DropDatabase(database) {
+			ok = false
+		}
+	}
+	return ok
 }
 
 func (c *clickhouse) columnTypes(database, table string, columns []string) (types []string, err error) {
@@ -329,4 +359,49 @@ parse:
 	}
 
 	return database, table, columns
+}
+
+func extractCreateDatabase(ddl string) string {
+	var check bool
+	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(ddl)), "CREATE") {
+		for _, field := range strings.Fields(ddl) {
+			switch {
+			case strings.ToUpper(field) == "DATABASE" && !check:
+				check = true
+			case check:
+				switch strings.ToUpper(field) {
+				case "IF", "NOT", "EXISTS":
+				default:
+					if len(field) != 0 {
+						return strings.TrimSpace(strings.TrimSuffix(field, ";"))
+					}
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func extractCreateTable(ddl string) (string, string) {
+	var check bool
+	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(ddl)), "CREATE") {
+		for _, field := range strings.Fields(ddl) {
+			switch {
+			case strings.ToUpper(field) == "TABLE" && !check:
+				check = true
+			case check:
+				if field = strings.TrimSpace(strings.TrimSuffix(field, ";")); len(field) != 0 {
+					switch strings.ToUpper(field) {
+					case "IF", "NOT", "EXISTS":
+					default:
+						if parts := strings.Split(field, "."); len(parts) == 2 {
+							return parts[0], parts[1]
+						}
+						return "", field
+					}
+				}
+			}
+		}
+	}
+	return "", ""
 }

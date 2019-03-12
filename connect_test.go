@@ -106,3 +106,29 @@ func TestDictionary(t *testing.T) {
 		assert.True(t, clickhouse.ReloadDictionary("dictionary"))
 	}
 }
+
+func TestExtractCreateDatabase(t *testing.T) {
+	assets := map[string]string{
+		"CREATE DATABASE test;":              "test",
+		"CREATE DATABASE test":               "test",
+		"CREATE DATABASE IF NOT EXISTS test": "test",
+		"create \n database test":            "test",
+		"CREATE TABLE db.table":              "",
+	}
+	for src, expected := range assets {
+		assert.Equal(t, expected, extractCreateDatabase(src))
+	}
+}
+func TestExtractCreateTable(t *testing.T) {
+	assets := map[string][]string{
+		"CREATE TABLE table":                  []string{"", "table"},
+		"CREATE TABLE db.table":               []string{"db", "table"},
+		"CREATE TABLE IF NOT exists db.table": []string{"db", "table"},
+	}
+	for src, expected := range assets {
+		database, table := extractCreateTable(src)
+		{
+			assert.Equal(t, expected, []string{database, table})
+		}
+	}
+}
