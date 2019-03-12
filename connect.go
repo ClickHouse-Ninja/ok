@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 )
@@ -19,7 +20,10 @@ type ClickHouse interface {
 	TableExists(database, table string) bool
 	DictionaryExists(dictionary string) bool
 	ReloadDictionary(dictionary string) bool
-	CopyFromReader(r io.Reader, sql string) bool
+	CopyFromCSVReader(r io.Reader, sql string) bool
+	CopyFromTSVReader(r io.Reader, sql string) bool
+	CopyFromCSVFile(path, sql string) bool
+	CopyFromTSVFile(path, sql string) bool
 	DropDatabase(database string) bool
 	DropTable(database, table string) bool
 	Clear() bool
@@ -208,7 +212,33 @@ func (c *clickhouse) Exec(query string) error {
 	return nil
 }
 
-func (c *clickhouse) CopyFromReader(r io.Reader, query string) bool {
+func (c *clickhouse) CopyFromCSVReader(r io.Reader, query string) bool {
+	return c.copyFromReader(r, query, ',')
+}
+
+func (c *clickhouse) CopyFromTSVReader(r io.Reader, query string) bool {
+	return c.copyFromReader(r, query, '\t')
+}
+
+func (c *clickhouse) CopyFromCSVFile(path, query string) bool {
+	return c.copyFromFile(path, query, ',')
+}
+
+func (c *clickhouse) CopyFromTSVFile(path, query string) bool {
+	return c.copyFromFile(path, query, '\t')
+}
+
+func (c *clickhouse) copyFromFile(path, query string, comma rune) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		c.test.Errorf("could not open file: %v", err)
+		return false
+	}
+	defer file.Close()
+	return c.copyFromReader(file, query, comma)
+}
+
+func (c *clickhouse) copyFromReader(r io.Reader, query string, comma rune) bool {
 	database, table, columns := parseQuery(query)
 	if len(table) == 0 {
 		c.test.Error("error while parsing query: cannot find table name")
@@ -222,7 +252,7 @@ func (c *clickhouse) CopyFromReader(r io.Reader, query string) bool {
 		c.test.Error(err)
 		return false
 	}
-	rows, err := tsvToArgs(columnTypes, r)
+	rows, err := csvToArgs(columnTypes, r, comma)
 	if err != nil {
 		c.test.Error(err)
 		return false

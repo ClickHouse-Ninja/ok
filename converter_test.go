@@ -89,7 +89,7 @@ func TestTSVtoArgs(t *testing.T) {
 	tsv.Write([]string{"1.1", "2.2", "1", "2", "3", "4", "10", "20", "30", "40", "Str", "00000000-0000-0000-0000-000000000000", "2019-02-09", "2019-02-09 10:10:10"})
 	tsv.Write([]string{"10.10", "20.20", "10", "20", "30", "40", "100", "200", "300", "400", "Str 2", "00000000-0000-0000-0000-000000000000", "2019-02-09", "2019-02-09 10:10:10"})
 	tsv.Flush()
-	if rows, err := tsvToArgs([]string{
+	if rows, err := csvToArgs([]string{
 		"Float32",
 		"Float64",
 		"Int8",
@@ -104,7 +104,7 @@ func TestTSVtoArgs(t *testing.T) {
 		"UUID",
 		"Date",
 		"DateTime",
-	}, body); assert.NoError(t, err) {
+	}, body, '\t'); assert.NoError(t, err) {
 		if assert.Len(t, rows, 2) {
 			{
 				assert.Equal(t, float32(1.1), rows[0][0])

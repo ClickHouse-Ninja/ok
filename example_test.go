@@ -50,7 +50,7 @@ func TestExapmple(t *testing.T) {
 		[]string{"2019-03-08 21:00:01", "click", "1", "2"},
 	})
 	writer.Flush()
-	if ok.CopyFromReader(&buf, "INSERT INTO tester.table (event_time, event_type, user_id, value) VALUES") {
+	if ok.CopyFromTSVReader(&buf, "INSERT INTO tester.table (event_time, event_type, user_id, value) VALUES") {
 		app := App{
 			conn: ok.DB(),
 		}

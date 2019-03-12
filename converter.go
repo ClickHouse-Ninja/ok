@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-func tsvToArgs(types []string, r io.Reader) (result [][]interface{}, err error) {
+func csvToArgs(types []string, r io.Reader, comma rune) (result [][]interface{}, err error) {
 	reader := csv.NewReader(r)
-	reader.Comma = '\t'
+	reader.Comma = comma
 	for columns := []string{}; ; {
 		if columns, err = reader.Read(); err != nil {
 			if err == io.EOF {
@@ -54,12 +54,15 @@ func converterFactory(t string) (converter, error) {
 		"UInt8", "UInt16", "UInt32", "UInt64":
 		return converters[t], nil
 	default:
-		if strings.HasPrefix(t, "Array") {
+		switch {
+		case strings.HasPrefix(t, "Array"):
 			base, err := converterFactory(t[6 : len(t)-1])
 			if err != nil {
 				return nil, err
 			}
 			return arrayT(base), nil
+		case strings.HasPrefix(t, "Enum"):
+			return func(src string) (interface{}, error) { return src, nil }, nil
 		}
 	}
 	return nil, fmt.Errorf("converter '%s' not found", t)
