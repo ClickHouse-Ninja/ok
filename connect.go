@@ -390,7 +390,7 @@ func extractCreateTable(ddl string) (string, string) {
 			case strings.ToUpper(field) == "TABLE" && !check:
 				check = true
 			case check:
-				if field = strings.TrimSpace(strings.TrimSuffix(field, ";")); len(field) != 0 {
+				if field = strings.TrimSpace(strings.TrimSuffix(field, "(")); len(field) != 0 {
 					switch strings.ToUpper(field) {
 					case "IF", "NOT", "EXISTS":
 					default:

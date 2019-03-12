@@ -121,9 +121,11 @@ func TestExtractCreateDatabase(t *testing.T) {
 }
 func TestExtractCreateTable(t *testing.T) {
 	assets := map[string][]string{
-		"CREATE TABLE table":                  []string{"", "table"},
-		"CREATE TABLE db.table":               []string{"db", "table"},
-		"CREATE TABLE IF NOT exists db.table": []string{"db", "table"},
+		"CREATE TABLE table":                    []string{"", "table"},
+		"CREATE TABLE db.table":                 []string{"db", "table"},
+		"CREATE TABLE IF NOT exists db.table":   []string{"db", "table"},
+		"CREATE TABLE IF NOT exists db.table(":  []string{"db", "table"},
+		"CREATE TABLE IF NOT exists db.table (": []string{"db", "table"},
 	}
 	for src, expected := range assets {
 		database, table := extractCreateTable(src)
