@@ -4,16 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 type ClickHouse interface {
 	DB() *sql.DB
-	Exec(query string) error
 	Version() (*Version, error)
+	Exec(query string) error
+	ExecFromFile(path string) error
+	SetSearchPath(path ...string)
 	ShowDatabases() ([]string, error)
 	ShowTables(from ...string) ([]string, error)
 	DatabaseExists(database string) bool
@@ -65,17 +69,19 @@ func Connect(test *testing.T, dsn string) ClickHouse {
 		database = value
 	}
 	return &clickhouse{
-		test:     test,
-		conn:     conn,
-		database: database,
+		test:       test,
+		conn:       conn,
+		database:   database,
+		searchPath: []string{"", "."},
 	}
 }
 
 type clickhouse struct {
-	test     *testing.T
-	conn     *sql.DB
-	database string
-	clear    struct {
+	test       *testing.T
+	conn       *sql.DB
+	database   string
+	searchPath []string
+	clear      struct {
 		databases []string
 		tables    [][]string
 	}
@@ -83,6 +89,10 @@ type clickhouse struct {
 
 func (c *clickhouse) DB() *sql.DB {
 	return c.conn
+}
+
+func (c *clickhouse) SetSearchPath(path ...string) {
+	c.searchPath = path
 }
 
 func (c *clickhouse) Version() (*Version, error) {
@@ -212,6 +222,16 @@ func (c *clickhouse) Exec(query string) error {
 	return nil
 }
 
+func (c *clickhouse) ExecFromFile(path string) (err error) {
+	var data []byte
+	for _, searchPath := range c.searchPath {
+		if data, err = ioutil.ReadFile(filepath.Join(searchPath, path)); err == nil {
+			return c.Exec(string(data))
+		}
+	}
+	return err
+}
+
 func (c *clickhouse) CopyFromCSVReader(r io.Reader, query string) bool {
 	return c.copyFromReader(r, query, ',')
 }
@@ -229,7 +249,7 @@ func (c *clickhouse) CopyFromTSVFile(path, query string) bool {
 }
 
 func (c *clickhouse) copyFromFile(path, query string, comma rune) bool {
-	file, err := os.Open(path)
+	file, err := c.openFile(path)
 	if err != nil {
 		c.test.Errorf("could not open file: %v", err)
 		return false
@@ -269,10 +289,7 @@ func (c *clickhouse) copyFromReader(r io.Reader, query string, comma rune) bool 
 	}
 	for _, row := range rows {
 		if _, err := block.Exec(row...); err != nil {
-			scope.Rollback()
-			{
-				c.test.Error(err)
-			}
+			c.test.Error(err)
 			return false
 		}
 	}
@@ -337,6 +354,15 @@ func (c *clickhouse) columnTypes(database, table string, columns []string) (type
 		types = append(types, columnTypes[column])
 	}
 	return types, nil
+}
+
+func (c *clickhouse) openFile(path string) (file *os.File, err error) {
+	for _, searchPath := range c.searchPath {
+		if file, err = os.Open(filepath.Join(searchPath, path)); err == nil {
+			return file, nil
+		}
+	}
+	return nil, err
 }
 
 var _ ClickHouse = (*clickhouse)(nil)
