@@ -1,6 +1,8 @@
-# ClickHouse testing suite [![Build Status](https://travis-ci.org/ClickHouse-Ninja/ok.svg?branch=master)](https://travis-ci.org/ClickHouse-Ninja/ok) [![codecov](https://codecov.io/gh/ClickHouse-Ninja/ok/branch/master/graph/badge.svg)](https://codecov.io/gh/ClickHouse-Ninja/ok)
+# ClickHouse testing suite [![Build Status](https://travis-ci.org/ClickHouse-Ninja/ok.svg?branch=master)](https://travis-ci.org/ClickHouse-Ninja/ok) [![codecov](https://codecov.io/gh/ClickHouse-Ninja/ok/branch/master/graph/badge.svg)](https://codecov.io/gh/ClickHouse-Ninja/ok) [![GoDoc](https://godoc.org/github.com/ClickHouse-Ninja/ok?status.svg)](https://godoc.org/github.com/ClickHouse-Ninja/ok)
 
 This is a small framework to help test Go and ClickHouse applications.
+
+Example:
 
 ```go
 package ok_test
@@ -12,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/ClickHouse-Ninja/ok"
+	_ "github.com/kshvakov/clickhouse"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,11 +30,11 @@ func (app *App) Count() (count int, err error) {
 }
 
 func TestExapmple(t *testing.T) {
-	conn := ok.Connect(t, "tcp://127.0.0.1:9000?debug=0")
-	if conn.DatabaseExists("tester") {
+	ok := ok.Connect(t, "tcp://127.0.0.1:9000?debug=0")
+	if ok.DatabaseExists("tester") {
 		t.Fatal("database 'tester' is already exists")
 	}
-	defer conn.DropDatabase("tester")
+	defer ok.DropDatabase("tester")
 	const ddl = `
 	CREATE DATABASE tester;
 	CREATE TABLE tester.table (
@@ -41,10 +44,10 @@ func TestExapmple(t *testing.T) {
 		, value      UInt32
 	) Engine Memory;
 	`
-	if err := conn.Exec(ddl); err != nil {
+	if err := ok.Exec(ddl); err != nil {
 		t.Fatalf("an error occurred while creating the test table: %v", err)
 	}
-	defer conn.DropTable("tester", "table")
+	defer ok.DropTable("tester", "table")
 	var (
 		buf    bytes.Buffer
 		writer = csv.NewWriter(&buf)
@@ -55,9 +58,9 @@ func TestExapmple(t *testing.T) {
 		[]string{"2019-03-08 21:00:01", "click", "1", "2"},
 	})
 	writer.Flush()
-	if conn.CopyFromReader(&buf, "INSERT INTO tester.table (event_time, event_type, user_id, value) VALUES") {
+	if ok.CopyFromReader(&buf, "INSERT INTO tester.table (event_time, event_type, user_id, value) VALUES") {
 		app := App{
-			conn: conn.DB(),
+			conn: ok.DB(),
 		}
 		if count, err := app.Count(); assert.NoError(t, err) {
 			assert.Equal(t, 2, count)
